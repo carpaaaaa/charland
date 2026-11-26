@@ -1,0 +1,111 @@
+diff --git a/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h b/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
+index b400c48..d9378aa 100644
+--- a/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
++++ b/sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h
+@@ -20,6 +20,7 @@
+ #include "sherpa-onnx/csrc/offline-transducer-greedy-search-nemo-decoder.h"
+ #include "sherpa-onnx/csrc/offline-transducer-modified-beam-search-nemo-decoder.h"
+ #include "sherpa-onnx/csrc/offline-transducer-nemo-model.h"
++#include "sherpa-onnx/csrc/onnx-utils.h"
+ #include "sherpa-onnx/csrc/pad-sequence.h"
+ #include "sherpa-onnx/csrc/symbol-table.h"
+ #include "sherpa-onnx/csrc/transpose.h"
+@@ -66,6 +67,11 @@ class OfflineRecognizerTransducerNeMoImpl : public OfflineRecognizerImpl {
+           std::make_unique<OfflineTransducerModifiedBeamSearchNeMoDecoder>(
+               model_.get(), config_.max_active_paths, unk_id_,
+               config_.blank_penalty, model_->IsTDT(), config_.hotwords_score);
++
++      // Charland: one model, two decoders. See DecodeStreams().
++      greedy_decoder_ =
++          std::make_unique<OfflineTransducerGreedySearchNeMoDecoder>(
++              model_.get(), config_.blank_penalty, model_->IsTDT());
+     } else {
+       SHERPA_ONNX_LOGE("Unsupported decoding method: %s",
+                        config_.decoding_method.c_str());
+@@ -106,6 +112,11 @@ class OfflineRecognizerTransducerNeMoImpl : public OfflineRecognizerImpl {
+           std::make_unique<OfflineTransducerModifiedBeamSearchNeMoDecoder>(
+               model_.get(), config_.max_active_paths, unk_id_,
+               config_.blank_penalty, model_->IsTDT(), config_.hotwords_score);
++
++      // Charland: one model, two decoders. See DecodeStreams().
++      greedy_decoder_ =
++          std::make_unique<OfflineTransducerGreedySearchNeMoDecoder>(
++              model_.get(), config_.blank_penalty, model_->IsTDT());
+     } else {
+       SHERPA_ONNX_LOGE("Unsupported decoding method: %s",
+                        config_.decoding_method.c_str());
+@@ -202,8 +213,32 @@ class OfflineRecognizerTransducerNeMoImpl : public OfflineRecognizerImpl {
+ 
+     Ort::Value encoder_out = Transpose12(model_->Allocator(), &t[0]);
+ 
+-    auto results =
+-        decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    // Charland: with decoding_method=modified_beam_search and a single stream,
++    //  - a stream without hotwords is decoded with greedy search only (robust,
++    //    cheap: this is what the live preview uses);
++    //  - a stream with hotwords is decoded twice from the same encoder output:
++    //    the beam search result (with hotwords) goes to `text`, the greedy
++    //    result goes to `lang`, so the caller can keep the greedy words and
++    //    take from the boosted pass only the spans that carry a hotword.
++    // The encoder, by far the most expensive part, runs once.
++    std::vector<OfflineTransducerDecoderResult> results;
++    std::vector<OfflineTransducerDecoderResult> greedy_results;
++    if (greedy_decoder_ && n == 1) {
++      if (ss[0]->GetContextGraph() != nullptr) {
++        Ort::Value encoder_out_copy = Clone(model_->Allocator(), &encoder_out);
++        Ort::Value length_copy = Clone(model_->Allocator(), &t[1]);
++        greedy_results = greedy_decoder_->Decode(
++            std::move(encoder_out_copy), std::move(length_copy), ss, n);
++        results =
++            decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++      } else {
++        results = greedy_decoder_->Decode(std::move(encoder_out),
++                                          std::move(t[1]), ss, n);
++      }
++    } else {
++      results =
++          decoder_->Decode(std::move(encoder_out), std::move(t[1]), ss, n);
++    }
+ 
+     int32_t frame_shift_ms = 10;
+     for (int32_t i = 0; i != n; ++i) {
+@@ -218,6 +253,16 @@ class OfflineRecognizerTransducerNeMoImpl : public OfflineRecognizerImpl {
+       r.text = ApplyInverseTextNormalization(std::move(r.text));
+       r.text = ApplyHomophoneReplacer(std::move(r.text));
+ 
++      if (!greedy_results.empty()) {
++        // Charland: the greedy transcript of the same audio, see above.
++        auto g = Convert(greedy_results[i], symbol_table_, frame_shift_ms,
++                         model_->SubsamplingFactor());
++        if (!g.text.empty() && g.text.front() == ' ') {
++          g.text.erase(0, 1);
++        }
++        r.lang = std::move(g.text);
++      }
++
+       ss[i]->SetResult(r);
+     }
+   }
+@@ -323,6 +368,8 @@ class OfflineRecognizerTransducerNeMoImpl : public OfflineRecognizerImpl {
+   std::unique_ptr<ssentencepiece::Ssentencepiece> bpe_encoder_;
+   std::unique_ptr<OfflineTransducerNeMoModel> model_;
+   std::unique_ptr<OfflineTransducerDecoder> decoder_;
++  // Charland: only set when decoding_method is modified_beam_search.
++  std::unique_ptr<OfflineTransducerDecoder> greedy_decoder_;
+   int32_t unk_id_ = -1;
+ };
+ 
+diff --git a/sherpa-onnx/csrc/version.cc b/sherpa-onnx/csrc/version.cc
+index fad4f46..facef2a 100644
+--- a/sherpa-onnx/csrc/version.cc
++++ b/sherpa-onnx/csrc/version.cc
+@@ -19,7 +19,8 @@ const char *GetGitSha1() {
+ }
+ 
+ const char *GetVersionStr() {
+-  static const char *version = "2.0.1";
++  // Charland: the suffix tells the app this build has the two-decoder patch.
++  static const char *version = "2.0.1+charland.1";
+   return version;
+ }
+ 

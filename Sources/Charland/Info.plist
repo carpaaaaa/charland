@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>it</string>
+	<key>CFBundleDisplayName</key>
+	<string>$(CHARLAND_NAME)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>it</string>
+		<string>en</string>
+	</array>
+	<key>CFBundleName</key>
+	<string>$(CHARLAND_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>$(CHARLAND_BUNDLE_ID)</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(CHARLAND_URL_SCHEME)</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Charland apre la finestra giusta quando salti a una sessione di un agente o alla canzone in riproduzione.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Charland mostra i prossimi eventi del tuo calendario nell'isola. Non li modifica.</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Char Studio</string>
+	<key>NSLocationUsageDescription</key>
+	<string>Charland mostra il meteo del posto in cui sei. Alle previsioni arriva solo la posizione arrotondata a circa un chilometro.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Charland mostra il meteo del posto in cui sei. Alle previsioni arriva solo la posizione arrotondata a circa un chilometro.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Charland ascolta la tua voce solo mentre tieni premuto il tasto della dettatura. L'audio resta sul Mac.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Charland trascrive quello che dici, direttamente sul Mac.</string>
+	<key>SUAllowsAutomaticUpdates</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://charland.charstudio.app/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>$(CHARLAND_SPARKLE_KEY)</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+</dict>
+</plist>

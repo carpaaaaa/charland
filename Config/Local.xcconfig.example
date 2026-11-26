@@ -1,0 +1,13 @@
+// Copy to Config/Local.xcconfig (git-ignored) and adjust. Then run: Scripts/genera-identita.sh && xcodegen
+//
+// Option A: your own Apple Development certificate (recommended: macOS keeps the permissions you grant
+// between builds, because the signature stays the same).
+// CHARLAND_TEAM = YOURTEAMID
+// CHARLAND_BUNDLE_ID = com.yourname.charland
+//
+// Option B: ad hoc signature (no Apple account). macOS asks for Accessibility, Microphone and Calendar
+// permissions again after every build.
+CHARLAND_SIGN_IDENTITY = -
+CHARLAND_TEAM =
+// Ad hoc builds cannot use the hardened runtime (macOS refuses to load the bundled libraries): switch it off.
+CHARLAND_HARDENED_RUNTIME = NO

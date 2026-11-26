@@ -1,0 +1,30 @@
+// Charland identity, in one place (comments are in Italian for now: see CONTRIBUTING.md).
+// L'identità di Charland, in un punto solo.
+// Da qui la leggono: il progetto Xcode (project.yml), l'Info.plist dell'app e,
+// attraverso Scripts/genera-identita.sh, il codice Swift (Identity.generated.swift).
+// Dopo ogni modifica: Scripts/genera-identita.sh && xcodegen
+
+CHARLAND_NAME = Charland
+CHARLAND_BUNDLE_ID = com.charstudio.charland
+CHARLAND_CLI = charland
+CHARLAND_URL_SCHEME = charland
+CHARLAND_TEAM = 2RLZS256X6
+CHARLAND_VERSION = 1.6
+CHARLAND_BUILD = 15
+CHARLAND_SITE = charstudio.app
+
+// Sparkle: la chiave pubblica Ed25519 che verifica gli aggiornamenti delle build ufficiali. La privata non sta nel repo.
+// Se cambia, le copie ufficiali già installate rifiutano gli aggiornamenti nuovi: non cambiarla.
+CHARLAND_SPARKLE_KEY = +pl0J9wliAWuFOmVVLZC/JSFLPFD74lRAjTlcSSNhqk=
+
+PRODUCT_NAME = $(CHARLAND_NAME)
+PRODUCT_BUNDLE_IDENTIFIER = $(CHARLAND_BUNDLE_ID)
+DEVELOPMENT_TEAM = $(CHARLAND_TEAM)
+MARKETING_VERSION = $(CHARLAND_VERSION)
+CURRENT_PROJECT_VERSION = $(CHARLAND_BUILD)
+
+// Firma del codice. Di serie la firma di sviluppo di Char Studio; chi compila con un altro certificato (o senza)
+// crea Config/Local.xcconfig (ignorato da git, esempio in Local.xcconfig.example) e cambia qui sotto quello che serve.
+CHARLAND_SIGN_IDENTITY = Apple Development
+CHARLAND_HARDENED_RUNTIME = YES
+#include? "Local.xcconfig"

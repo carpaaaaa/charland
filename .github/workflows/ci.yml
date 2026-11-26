@@ -1,0 +1,44 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  packages:
+    name: Package tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Newest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+      - name: CharlandCore
+        run: swift test
+        working-directory: Packages/CharlandCore
+      - name: CharlandKit
+        run: swift test
+        working-directory: Packages/CharlandKit
+
+  app:
+    name: App build
+    runs-on: macos-26
+    # The app needs Xcode 27 (the hosted runners have 26.6 at the moment), so this job is expected to fail until they catch up. It does not block pull requests.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Newest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$latest"
+          xcodebuild -version
+      - name: Tools
+        run: brew install xcodegen
+      - name: Config
+        run: cp Config/Local.xcconfig.example Config/Local.xcconfig
+      - name: Dependencies
+        run: Scripts/scarica-dipendenze.sh
+      - name: Build
+        run: Scripts/build.sh

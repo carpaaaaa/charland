@@ -1,0 +1,102 @@
+{
+  "sourceLanguage": "it",
+  "strings": {
+    "NSAppleEventsUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland opens the right window when you jump to an agent session or to the song that's playing."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland apre la finestra giusta quando salti a una sessione di un agente o alla canzone in riproduzione."
+          }
+        }
+      }
+    },
+    "NSCalendarsFullAccessUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland shows your upcoming calendar events in the island. It never changes them."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland mostra i prossimi eventi del tuo calendario nell'isola. Non li modifica."
+          }
+        }
+      }
+    },
+    "NSLocationUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland shows the weather where you are. The forecast only receives your location rounded to about a kilometre."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland mostra il meteo del posto in cui sei. Alle previsioni arriva solo la posizione arrotondata a circa un chilometro."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland shows the weather where you are. The forecast only receives your location rounded to about a kilometre."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland mostra il meteo del posto in cui sei. Alle previsioni arriva solo la posizione arrotondata a circa un chilometro."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland listens to your voice only while you hold the dictation key. The audio stays on your Mac."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland ascolta la tua voce solo mentre tieni premuto il tasto della dettatura. L'audio resta sul Mac."
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland transcribes what you say, right on your Mac."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Charland trascrive quello che dici, direttamente sul Mac."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}
