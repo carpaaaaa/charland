@@ -45,11 +45,11 @@ final class AppServices {
         PrivilegedHelper.wake()
         // I widget accanto al Dock: si accendono solo se sono accesi nelle impostazioni.
         DockBar.shared.start()
-        // La barra di ricerca che esce dal Dock (Impostazioni › Ricerca): prende ⌘spazio solo se è accesa.
         // Il righello della giornata sul bordo (Impostazioni › Righello): solo un ascolto del puntatore finché non esce.
         DayRuler.shared.start()
         // Lo sfondo di Charland (Impostazioni › Sfondo): ridisegna se cambiano gli schermi.
         WallpaperSettings.shared.start()
+        watchPermissions()
         // La finestra si apre sulla Voce finché la dettatura non è pronta: la prima cosa che si vede è la
         // guida che dice cosa manca.
         if showWindow { showSettings(section: VoiceSettings.shared.enabled && !DictationSetup.isReady ? .voice : nil) }
@@ -66,7 +66,41 @@ final class AppServices {
         }
     }
 
+    // MARK: Permessi arrivati dopo l'avvio
+
+    private var permissionTimer: Timer?
+    private var permissions = PermissionState(accessibility: AXIsProcessTrusted(), inputMonitoring: CGPreflightListenEventAccess())
+
+    /// Ogni 3 secondi guarda se Accessibilità o Monitoraggio input sono stati concessi nel frattempo (due letture che non
+    /// costano niente). Quando succede riaccende quello che all'avvio non era partito: prima restava spento finché non lo
+    /// si spegneva e riaccendeva a mano nelle impostazioni.
+    private func watchPermissions() {
+        permissionTimer?.invalidate()
+        permissions = PermissionState(accessibility: AXIsProcessTrusted(), inputMonitoring: CGPreflightListenEventAccess())
+        let timer = Timer(timeInterval: 3, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkPermissions() }
+        }
+        timer.tolerance = 1
+        RunLoop.main.add(timer, forMode: .common)
+        permissionTimer = timer
+    }
+
+    private func checkPermissions() {
+        let now = PermissionState(accessibility: AXIsProcessTrusted(), inputMonitoring: CGPreflightListenEventAccess())
+        let gained = now.gainedSince(permissions)
+        permissions = now
+        guard gained, started else { return }
+        // Volume e luminosità, le scorciatoie di soli modificatori, lo storico degli appunti, Mantieni attivo, Chiudi le app.
+        Features.shared.apply()
+        DictationController.shared.start()
+        ClipboardHistory.shared.apply()
+        KeepAwake.shared.registerShortcut()
+        AppQuitter.shared.start()
+    }
+
     func stop() {
+        permissionTimer?.invalidate()
+        permissionTimer = nil
         IslandHub.shared.onRebuild = nil
         pointer.stop()
         AppQuitter.shared.stop()
