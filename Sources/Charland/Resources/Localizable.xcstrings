@@ -4862,6 +4862,16 @@
         }
       }
     },
+    "Ombra sugli orli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edge shadow"
+          }
+        }
+      }
+    },
     "Onde" : {
       "localizations" : {
         "en" : {

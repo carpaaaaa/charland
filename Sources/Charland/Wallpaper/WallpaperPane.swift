@@ -192,6 +192,7 @@ struct WallpaperPane: View {
             ValueSlider("Strascico", value: $settings.fluted.smear, in: 0...1)
             ValueSlider("Smerigliato", value: $settings.fluted.frost, in: 0...1)
             ValueSlider("Luce sugli orli", value: $settings.fluted.light, in: 0...1)
+            ValueSlider("Ombra sugli orli", value: $settings.fluted.shadow, in: 0...1)
             ValueSlider("Grana", value: $settings.fluted.grain, in: 0...1)
             ValueSlider("Contrasto", value: $settings.fluted.contrast, in: 0...1)
             ValueSlider("Luminosità", value: $settings.fluted.brightness, in: -0.5...0.5)

@@ -874,6 +874,7 @@ enum WallpaperChecks {
         if args.contains("--specchio") { draw.fluted.profile = .mirror }
         if let v = value("--ripetizione").flatMap(Double.init) { draw.fluted.repetition = v }
         if let v = value("--luce").flatMap(Double.init) { draw.fluted.light = v; draw.lens.light = v; draw.fog.light = v }
+        if let v = value("--ombra").flatMap(Double.init) { draw.fluted.shadow = v }
         if let v = value("--dispersione").flatMap(Double.init) { draw.fluted.dispersion = v; draw.lens.dispersion = v; draw.fog.dispersion = v }
         var size = CGSize(width: 2880, height: 1864)
         if let m = value("--misura")?.split(separator: "x").compactMap({ Double($0) }), m.count == 2 { size = CGSize(width: m[0], height: m[1]) }

@@ -109,6 +109,10 @@ struct FlutedOptions: Sendable, Hashable, Codable {
     var smear: Double = 0
     var frost: Double = 0
     var light: Double = 0
+    /// L'ombra sugli orli: la riga scura dove due canne si toccano e il velo appena dentro l'orlo in ombra. 0,4 è
+    /// com'era prima; a 0 sparisce del tutto (carpa, 26 novembre 2026: su uno sfondo chiaro le righe scure fra le
+    /// canne si vedono troppo e vanno nascoste).
+    var shadow: Double = 0.4
     var grain: Double = 0.264937261396811
     var contrast: Double = 0
     var brightness: Double = 0
@@ -119,8 +123,8 @@ struct FlutedOptions: Sendable, Hashable, Codable {
     init() {}
     /// Tutti i numeri sono numeri (un NaN salvato farebbe cadere l'app a ogni avvio).
     var isFinite: Bool {
-        [width, angle, curve, waves, cutLeft, cutRight, repetition, irregularity, refraction, dispersion, smear, frost, light, grain,
-         contrast, brightness].allSatisfy(\.isFinite)
+        [width, angle, curve, waves, cutLeft, cutRight, repetition, irregularity, refraction, dispersion, smear, frost, light, shadow,
+         grain, contrast, brightness].allSatisfy(\.isFinite)
     }
     /// Le scelte salvate da una versione con meno campi restano: i campi che mancano prendono il valore di serie.
     init(from decoder: Decoder) throws {
@@ -142,6 +146,7 @@ struct FlutedOptions: Sendable, Hashable, Codable {
         smear = try c.decodeIfPresent(Double.self, forKey: .smear) ?? d.smear
         frost = try c.decodeIfPresent(Double.self, forKey: .frost) ?? d.frost
         light = try c.decodeIfPresent(Double.self, forKey: .light) ?? d.light
+        shadow = try c.decodeIfPresent(Double.self, forKey: .shadow) ?? d.shadow
         grain = try c.decodeIfPresent(Double.self, forKey: .grain) ?? d.grain
         contrast = try c.decodeIfPresent(Double.self, forKey: .contrast) ?? d.contrast
         brightness = try c.decodeIfPresent(Double.self, forKey: .brightness) ?? d.brightness
@@ -404,6 +409,8 @@ enum GlassRenderer {
         let kw = 2 * Float.pi * Float(o.waves) / span
         let amp = Float(o.curve) * span * 0.12
         let refr = Float(o.refraction), light = Float(o.light), grain = Float(o.grain), smear = Float(o.smear)
+        // Ombra: 1 com'era prima (Ombra sugli orli a 0,4), 0 nessuna ombra.
+        let shade = Float(o.shadow) / 0.4
         // Dispersione: un orlo colorato di pochi pixel, solo dove il vetro è inclinato (carpa: «troppo rgb, glitchy»).
         let spread = Float(o.dispersion) * F * 0.04
         let contrast = Float(o.contrast), bright = Float(o.brightness)
@@ -499,9 +506,9 @@ enum GlassRenderer {
             let facing = max(0, ((n * side) * toLight).sum() / 1)
             let rim = smoothstep(0.55, 1, tilt)
             c += SIMD3(repeating: rim * rim * light * (0.12 + 0.5 * facing))
-            c *= 1 - smoothstep(0.35, 0.95, tilt) * (1 - facing) * light * 0.22
+            c *= max(0, 1 - smoothstep(0.35, 0.95, tilt) * (1 - facing) * light * 0.22 * shade)
             let edge = (0.5 - abs(u)) * F / seam
-            c *= 1 - exp(-edge * edge) * 0.35 * (0.4 + light)
+            c *= max(0, 1 - exp(-edge * edge) * 0.35 * (0.4 + light) * shade)
             return finish(c, x, y)
         }
     }
