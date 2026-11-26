@@ -193,6 +193,12 @@ if let session = option("--dove-agente") {
     exit(0)
 }
 
+#if DEBUG
+if arguments.contains("--prova-agenda") {
+    exit(MainActor.assumeIsolated { AgendaStore.shared.checkUpcoming() } ? 0 : 1)
+}
+#endif
+
 if arguments.contains("--permessi") {
     MainActor.assumeIsolated { DockChecks.printPermissions() }
     exit(0)

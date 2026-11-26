@@ -21,6 +21,16 @@
         }
       }
     },
+    "%@ alle %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ at %@"
+          }
+        }
+      }
+    },
     "%@ liberi" : {
       "localizations" : {
         "en" : {
@@ -47,6 +57,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ isn't ready"
+          }
+        }
+      }
+    },
+    "%@ sera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ evening"
           }
         }
       }
@@ -4602,12 +4622,12 @@
         }
       }
     },
-    "Niente in agenda oggi e domani." : {
+    "Niente in agenda nel prossimo mese." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nothing scheduled today or tomorrow."
+            "value" : "Nothing on your agenda in the next month."
           }
         }
       }

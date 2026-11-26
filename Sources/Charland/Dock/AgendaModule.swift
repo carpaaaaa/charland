@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import EventKit
+import CharlandCore
 
 /// Un evento del Calendario, copiato in un valore semplice: gli oggetti di EventKit restano nel deposito.
 struct AgendaEvent: Identifiable, Equatable, Sendable {
@@ -68,10 +69,11 @@ final class AgendaReader: @unchecked Sendable {
             let chosen = all.filter { !hidden.contains($0.calendarIdentifier) }
             var events: [AgendaEvent] = []
             if !chosen.isEmpty {
-                // Da qualche ora fa (un evento lungo già cominciato) alla fine di domani.
+                // Da qualche ora fa (un evento lungo già cominciato) a un mese da oggi: il widget mostra la prossima cosa
+                // anche se è fra qualche giorno (26 novembre 2026; prima si fermava a domani).
                 let calendar = Calendar.current
                 let from = now.addingTimeInterval(-12 * 3600)
-                let to = calendar.date(byAdding: .day, value: 2, to: calendar.startOfDay(for: now)) ?? now.addingTimeInterval(48 * 3600)
+                let to = calendar.date(byAdding: .day, value: 31, to: calendar.startOfDay(for: now)) ?? now.addingTimeInterval(31 * 86_400)
                 let predicate = store.predicateForEvents(withStart: from, end: to, calendars: chosen)
                 // Giorno per giorno (un evento cominciato ieri vale per oggi); in ogni giorno prima quelli di tutto il
                 // giorno, poi per ora. Gli invitati si guardano solo per i primi, dopo averli ordinati.
@@ -85,7 +87,7 @@ final class AgendaReader: @unchecked Sendable {
                     }
                 for event in sorted where !Self.declined(event) {
                     events.append(value(event))
-                    if events.count >= 30 { break }
+                    if events.count >= 80 { break }
                 }
             }
             done(Result(calendars: calendars, events: events))
@@ -396,6 +398,53 @@ final class AgendaStore {
         return first
     }
 
+    /// La prossima cosa per il widget del Dock: anche nei giorni dopo e anche senza un'ora (`NextUp`). Il giorno più
+    /// vicino che ha qualcosa; lì prima le cose con un'ora, se no quella senza ora.
+    func upcoming(at now: Date) -> AgendaEvent? {
+        let open = events.filter { $0.end > now }
+        let timedNext = next(at: now)
+        let pick = NextUp.choose(days: open.map { AgendaText.day(of: $0.start, now: now) },
+                                 timed: open.map { !$0.allDay },
+                                 timedPick: timedNext.flatMap { t in open.firstIndex { $0.id == t.id } })
+        return pick.map { open[$0] }
+    }
+
+    #if DEBUG
+    /// `Charland --prova-agenda`: le situazioni di carpa (26 novembre 2026) con impegni finti, e cosa mostra il widget.
+    func checkUpcoming() -> Bool {
+        let calendar = Calendar.current
+        let now = Date()
+        func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: now))! }
+        func timed(_ title: String, _ offset: Int, hour: Int) -> AgendaEvent {
+            let start = calendar.date(bySettingHour: hour, minute: 0, second: 0, of: day(offset))!
+            return AgendaEvent(id: title, title: title, start: start, end: start.addingTimeInterval(3600), allDay: false,
+                               red: 1, green: 1, blue: 1, location: nil, meeting: nil)
+        }
+        func untimed(_ title: String, _ offset: Int) -> AgendaEvent {
+            AgendaEvent(id: title, title: title, start: day(offset), end: day(offset + 1), allDay: true,
+                        red: 1, green: 1, blue: 1, location: nil, meeting: nil, task: true)
+        }
+        let cases: [(String, [AgendaEvent], String)] = [
+            ("a un'ora fra 4 giorni", [timed("Dentista", 4, hour: 10)], "Dentista"),
+            ("a un'ora fra 5 giorni, senza ora fra 4", [untimed("Pagare l'affitto", 4), timed("Dentista", 5, hour: 10)], "Pagare l'affitto"),
+            ("stesso giorno, con e senza ora", [untimed("Pagare l'affitto", 4), timed("Dentista", 4, hour: 10)], "Dentista"),
+            ("fra 12 giorni", [timed("Volo", 12, hour: 7)], "Volo"),
+        ]
+        let saved = events
+        var ok = true
+        for (name, list, expected) in cases {
+            events = list
+            let got = upcoming(at: now)
+            let line = got.map { "\($0.title), \(AgendaText.when($0, now: now))" } ?? "niente"
+            let pass = got?.title == expected
+            ok = ok && pass
+            print(pass ? "ok  " : "NO  ", name, "→", line)
+        }
+        events = saved
+        return ok
+    }
+    #endif
+
     /// Per le prove fuori schermo: eventi finti.
     func useSample(now: Date) {
         access = .granted
@@ -426,21 +475,37 @@ enum AgendaText {
         return Calendar.current.isDate(date, inSameDayAs: tomorrow)
     }
 
-    /// Quando, in breve: «in corso, fino alle 16:00», «fra 12 min», «alle 15:30», «domani alle 9:00».
+    /// Il nome di un giorno che non è oggi né domani: «lunedì» entro una settimana, se no «30 nov».
+    static func dayName(_ date: Date, now: Date) -> String {
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
+        return days < 7 ? date.formatted(.dateTime.weekday(.wide)) : date.formatted(.dateTime.day().month(.abbreviated))
+    }
+
+    /// Quando, in breve: «in corso, fino alle 16:00», «fra 12 min», «alle 15:30», «domani alle 9:00», «lunedì alle
+    /// 9:00», «30 nov».
     static func when(_ event: AgendaEvent, now: Date) -> String {
+        let today = Calendar.current.isDate(day(of: event.start, now: now), inSameDayAs: now)
         if event.task, event.allDay, !event.span {
             let tomorrow = isTomorrow(event.start, now: now)
-            if event.evening { return tomorrow ? String(localized: "domani sera") : String(localized: "stasera") }
-            return tomorrow ? String(localized: "domani") : String(localized: "in giornata")
+            if event.evening {
+                if today { return String(localized: "stasera") }
+                return tomorrow ? String(localized: "domani sera") : String(localized: "\(dayName(event.start, now: now)) sera")
+            }
+            if today { return String(localized: "in giornata") }
+            return tomorrow ? String(localized: "domani") : dayName(event.start, now: now)
         }
-        if event.allDay { return String(localized: "Tutto il giorno") }
+        if event.allDay {
+            if today { return String(localized: "Tutto il giorno") }
+            return isTomorrow(event.start, now: now) ? String(localized: "domani") : dayName(event.start, now: now)
+        }
         if event.openEnded, event.inProgress(at: now) { return String(localized: "adesso") }
         if event.inProgress(at: now) { return String(localized: "in corso, fino alle \(time(event.end))") }
         let minutes = Int((event.start.timeIntervalSince(now) / 60).rounded(.up))
         if minutes < 60 { return minutes <= 0 ? String(localized: "adesso") : String(localized: "fra \(minutes) min") }
         if Calendar.current.isDate(event.start, inSameDayAs: now) { return String(localized: "alle \(time(event.start))") }
         if isTomorrow(event.start, now: now) { return String(localized: "domani alle \(time(event.start))") }
-        return event.start.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        return String(localized: "\(dayName(event.start, now: now)) alle \(time(event.start))")
     }
 
     /// Da che ora a che ora, a parole (niente trattini).
@@ -481,7 +546,7 @@ final class AgendaModule: DockModule {
     static func lines(now: Date) -> (title: String, subtitle: String?) {
         let store = AgendaStore.shared
         if store.hasSource {
-            guard let next = store.next(at: now) else { return (String(localized: "Niente in agenda"), nil) }
+            guard let next = store.upcoming(at: now) else { return (String(localized: "Niente in agenda"), nil) }
             return (next.title, AgendaText.when(next, now: now))
         }
         switch store.access {
@@ -502,7 +567,7 @@ final class AgendaModule: DockModule {
     func tap(_ cell: String?) {
         if store.hasSource {
             let now = Date()
-            let next = store.next(at: now)
+            let next = store.upcoming(at: now)
             // Una riunione che sta per cominciare (o è cominciata): il clic ti porta dentro.
             if let next, let link = next.meeting, next.start.timeIntervalSince(now) < 10 * 60 {
                 DockLaunch.open(link)
@@ -545,7 +610,7 @@ struct AgendaPlatter: View {
     private let store = AgendaStore.shared
 
     var body: some View {
-        let next = store.hasSource ? store.next(at: now) : nil
+        let next = store.hasSource ? store.upcoming(at: now) : nil
         let lines = AgendaModule.lines(now: now)
         let minutes = next.flatMap { AgendaText.minutesLeft($0, now: now) }
         let urgent = next.map { !$0.inProgress(at: now) && (minutes ?? 99) <= 5 } ?? false
@@ -621,7 +686,7 @@ struct AgendaDrawer: View {
         let store = AgendaStore.shared
         var h = m.pad * 2 + m.header + m.gap + m.gap + m.footer
         guard store.hasSource else { return (nil, [], h + message) }
-        let next = store.next(at: now)
+        let next = store.upcoming(at: now)
         if let next {
             h += featured
             if next.meeting != nil { h += 10 + m.footer }
@@ -730,7 +795,7 @@ struct AgendaDrawer: View {
             }
         }
         if plan.next == nil, plan.rest.isEmpty {
-            message(String(localized: "Niente in agenda oggi e domani."))
+            message(String(localized: "Niente in agenda nel prossimo mese."))
         }
         if !plan.rest.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
@@ -741,7 +806,7 @@ struct AgendaDrawer: View {
                     if day != previous {
                         Text(verbatim: AgendaText.isTomorrow(day, now: now) ? String(localized: "Domani")
                              : Calendar.current.isDate(day, inSameDayAs: now) ? String(localized: "Oggi")
-                             : day.formatted(.dateTime.weekday(.wide)))
+                             : AgendaText.dayName(day, now: now))
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(.white.opacity(0.5))
                             .frame(height: Self.separator, alignment: .bottomLeading)

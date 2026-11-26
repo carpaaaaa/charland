@@ -151,7 +151,8 @@ final class CharcalAgenda {
         let now = Date()
         let calendar = Calendar.current
         let today = Self.dayString(now)
-        let tomorrow = Self.dayString(calendar.date(byAdding: .day, value: 1, to: now) ?? now.addingTimeInterval(86_400))
+        // Un mese avanti: il widget del Dock mostra la prossima cosa anche se è fra qualche giorno (26 novembre 2026).
+        let until = Self.dayString(calendar.date(byAdding: .day, value: 30, to: now) ?? now.addingTimeInterval(30 * 86_400))
         let needFolders = Date().timeIntervalSince(foldersLoaded) > 3600
         Task {
             defer { self.loading = false }
@@ -171,7 +172,7 @@ final class CharcalAgenda {
                 }
                 let data = try await Self.fetch(Self.request("v1/items", token: token,
                                                              query: [URLQueryItem(name: "from", value: today),
-                                                                     URLQueryItem(name: "to", value: tomorrow)]))
+                                                                     URLQueryItem(name: "to", value: until)]))
                 guard current() else { return }
                 let items = Self.decodeItems(data, folders: self.folders, now: Date())
                 self.state = .connected
