@@ -16,7 +16,6 @@ import CharlandCore
 //   --serve               accende i servizi senza aprire la finestra
 //   --dock                accende solo i widget accanto al Dock, senza isola (con --impostazioni apre la sezione Dock)
 //   --appunti            accende solo la farfalla e lo storico degli appunti, senza isola
-//   --ricerca             accende solo la barra di ricerca che esce dal Dock, senza isola (comandi con una notifica)
 //   --agenti             accende solo l'osservatore delle sessioni di Claude, senza isola (con CHARLAND_TRACE=1 dice chi lavora)
 //   --voce                apre solo la sezione Voce delle impostazioni, senza isola e senza servizi
 //   --sezione <nome>      apre le impostazioni su una sezione (general, appearance, voice…), senza isola né servizi
@@ -296,7 +295,6 @@ MainActor.assumeIsolated {
     delegate.dockOnly = arguments.contains("--dock")
     delegate.lockOnly = arguments.contains("--blocco")
     delegate.clipboardOnly = arguments.contains("--appunti")
-    delegate.searchOnly = arguments.contains("--ricerca")
     delegate.agentsOnly = arguments.contains("--agenti")
     delegate.voiceOnly = arguments.contains("--voce")
     delegate.settingsSection = option("--sezione")

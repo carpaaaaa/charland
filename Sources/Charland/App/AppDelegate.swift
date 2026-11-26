@@ -21,8 +21,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var lockOnly = false
     /// Solo la farfalla e lo storico degli appunti, senza isola: per provarli mentre gira la Charland installata.
     var clipboardOnly = false
-    /// Solo la barra di ricerca (`--ricerca`), senza isola: per provarla accanto alla Charland installata.
-    var searchOnly = false
     /// Solo l'osservatore delle sessioni di Claude, senza isola: per provare chi risulta al lavoro accanto alla Charland
     /// installata (`CHARLAND_TRACE=1 Charland --agenti`, con `CHARLAND_CLAUDE_PROJECTS` per una cartella di prova).
     var agentsOnly = false
@@ -36,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// vera riaccesa senza aprire la finestra. Prima contava qui, e l'app girava senza icona nel Dock: la finestra
     /// delle impostazioni non diventava mai attiva, con interruttori e selezione grigi invece che nel colore
     /// dell'accento (carpa, 17 novembre 2026).
-    private var isScripted: Bool { lockOnly || dockOnly || clipboardOnly || searchOnly || agentsOnly || voiceOnly || settingsSection != nil || demoScene != nil || snapshotFolder != nil || benchReport != nil || importOpenWhispr || !dictateFiles.isEmpty }
+    private var isScripted: Bool { lockOnly || dockOnly || clipboardOnly || agentsOnly || voiceOnly || settingsSection != nil || demoScene != nil || snapshotFolder != nil || benchReport != nil || importOpenWhispr || !dictateFiles.isEmpty }
 
     private var terminationSource: DispatchSourceSignal?
 
@@ -60,10 +58,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Thrift.apply()
         if clipboardOnly {
             ClipboardTest.start()
-            return
-        }
-        if searchOnly {
-            SearchTest.start()
             return
         }
         if agentsOnly {

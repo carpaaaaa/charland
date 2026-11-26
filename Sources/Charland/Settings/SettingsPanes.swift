@@ -888,6 +888,7 @@ struct CopyRow: View {
 struct PermissionsPane: View {
     @State private var microphone = AVCaptureDevice.authorizationStatus(for: .audio)
     @State private var accessibility = AXIsProcessTrusted()
+    @State private var inputMonitoring = CGPreflightListenEventAccess()
     @State private var calendar = EKEventStore.authorizationStatus(for: .event)
     @State private var location = PermissionsPane.locationManager.authorizationStatus
     @State private var timer: Timer?
@@ -896,11 +897,28 @@ struct PermissionsPane: View {
     /// ancora) e ne legge lo stato, invece di crearne uno nuovo a ogni controllo.
     static let locationManager = CLLocationManager()
 
-    /// Il nome del permesso cambia con la versione di macOS.
+    /// Il nome del permesso cambia con la versione di macOS. Su macOS 27.3 il pannello Accessibilità delle app è vuoto:
+    /// chi controlla le altre app (Charland, AltTab, Claude…) sta in «System & App Protection Override», con «Control your
+    /// entire Mac and all apps» (visto il 26 novembre 2026 sul Mac di carpa, dopo il passaggio alla build ufficiale).
     static var accessibilityName: String {
         let v = ProcessInfo.processInfo.operatingSystemVersion
         if v.majorVersion == 27, v.minorVersion < 3 { return "Device Control and Data Access" }
+        if v.majorVersion >= 27 { return "System & App Protection Override" }
         return String(localized: "Accessibilità")
+    }
+
+    static var accessibilityPurpose: String {
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        let uso = String(localized: "Per scrivere il testo dettato, prendere i tasti del volume e della luminosità, seguire il Dock e riconoscere la x rossa delle finestre.")
+        guard v.majorVersion >= 27, v.minorVersion >= 3 || v.majorVersion > 27 else { return uso }
+        return uso + " " + String(localized: "Premi Concedi e poi Apri Impostazioni di Sistema: in Privacy e sicurezza › System & App Protection Override Charland deve avere «Control your entire Mac and all apps». Il pannello Accessibilità resta vuoto, è normale.")
+    }
+
+    /// Dove portare chi preme Concedi: su macOS 27.3 il pannello Accessibilità è vuoto, meglio Privacy e sicurezza.
+    static var accessibilityLink: String {
+        let v = ProcessInfo.processInfo.operatingSystemVersion
+        if v.majorVersion > 27 || (v.majorVersion == 27 && v.minorVersion >= 3) { return "x-apple.systempreferences:com.apple.preference.security?Privacy" }
+        return "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
     }
 
     var body: some View {
@@ -916,11 +934,17 @@ struct PermissionsPane: View {
                     }
                 }
                 PermissionRow(title: Self.accessibilityName,
-                              purpose: String(localized: "Per scrivere il testo dettato, prendere i tasti del volume e della luminosità, seguire il Dock e riconoscere la x rossa delle finestre."),
+                              purpose: Self.accessibilityPurpose,
                               granted: accessibility,
-                              link: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                              link: Self.accessibilityLink) {
                     let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
                     _ = AXIsProcessTrustedWithOptions(options)
+                }
+                PermissionRow(title: String(localized: "Monitoraggio input"),
+                              purpose: String(localized: "Per sentire il tasto della dettatura e i tasti del volume e della luminosità da qualunque app."),
+                              granted: inputMonitoring,
+                              link: "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent") {
+                    _ = CGRequestListenEventAccess()
                 }
                 PermissionRow(title: String(localized: "Calendario"),
                               purpose: String(localized: "Per il prossimo impegno accanto al Dock e sul blocco schermo."),
@@ -935,7 +959,7 @@ struct PermissionsPane: View {
                     if location == .notDetermined { Self.locationManager.requestWhenInUseAuthorization() }
                 }
             } footer: {
-                Text("Charland chiede ogni permesso solo quando serve, e senza funziona tutto il resto. Si cambiano in Impostazioni di Sistema › Privacy e sicurezza.")
+                Text("Charland chiede ogni permesso solo quando serve, e senza funziona tutto il resto. Si cambiano in Impostazioni di Sistema › Privacy e sicurezza. Se installi Charland da un'altra fonte (per esempio una copia compilata da te al posto di quella scaricata), macOS la vede come un'app nuova e i permessi vanno dati di nuovo.")
             }
             Section {
                 HelperStatusRow()
@@ -950,6 +974,7 @@ struct PermissionsPane: View {
                 Task { @MainActor in
                     microphone = AVCaptureDevice.authorizationStatus(for: .audio)
                     accessibility = AXIsProcessTrusted()
+                    inputMonitoring = CGPreflightListenEventAccess()
                     calendar = EKEventStore.authorizationStatus(for: .event)
                     location = Self.locationManager.authorizationStatus
                 }

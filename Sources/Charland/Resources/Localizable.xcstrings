@@ -1562,12 +1562,12 @@
         }
       }
     },
-    "Charland chiede ogni permesso solo quando serve, e senza funziona tutto il resto. Si cambiano in Impostazioni di Sistema › Privacy e sicurezza." : {
+    "Charland chiede ogni permesso solo quando serve, e senza funziona tutto il resto. Si cambiano in Impostazioni di Sistema › Privacy e sicurezza. Se installi Charland da un'altra fonte (per esempio una copia compilata da te al posto di quella scaricata), macOS la vede come un'app nuova e i permessi vanno dati di nuovo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Charland asks for each permission only when it's needed, and everything else works without it. Change them in System Settings › Privacy & Security."
+            "value" : "Charland asks for each permission only when it needs it, and everything else works without it. You can change them in System Settings › Privacy & Security. If you install Charland from another source (for example a copy you built yourself instead of the downloaded one), macOS sees it as a new app and the permissions must be given again."
           }
         }
       }
@@ -4192,6 +4192,16 @@
         }
       }
     },
+    "Monitoraggio input" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Input Monitoring"
+          }
+        }
+      }
+    },
     "Mostra" : {
       "localizations" : {
         "en" : {
@@ -5032,6 +5042,16 @@
         }
       }
     },
+    "Per sentire il tasto della dettatura e i tasti del volume e della luminosità da qualunque app." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To hear the dictation key and the volume and brightness keys from any app."
+          }
+        }
+      }
+    },
     "Per tenere sveglio il Mac chiuso Charland usa un piccolo aiutante di sistema. Va approvato una volta:" : {
       "localizations" : {
         "en" : {
@@ -5128,6 +5148,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Default"
+          }
+        }
+      }
+    },
+    "Premi Concedi e poi Apri Impostazioni di Sistema: in Privacy e sicurezza › System & App Protection Override Charland deve avere «Control your entire Mac and all apps». Il pannello Accessibilità resta vuoto, è normale." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Press Allow, then Open System Settings: in Privacy & Security › System & App Protection Override, Charland needs “Control your entire Mac and all apps”. The Accessibility pane stays empty, that is normal."
           }
         }
       }

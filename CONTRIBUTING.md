@@ -87,7 +87,7 @@ Put logic that can be tested without a screen in `CharlandCore`, with tests. Kee
 
 - `swift test` in `Packages/CharlandCore` and `Packages/CharlandKit`.
 - `Charland --selftest` runs the island's motion checks headless.
-- `Charland --demo <scene>`, `--snapshot <folder>`, `--dock`, `--appunti`, `--ricerca`, `--blocco` open single parts of
+- `Charland --demo <scene>`, `--snapshot <folder>`, `--dock`, `--appunti`, `--blocco` open single parts of
   the app for manual checks.
 
 ## Private macOS APIs

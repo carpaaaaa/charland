@@ -46,7 +46,6 @@ final class AppServices {
         // I widget accanto al Dock: si accendono solo se sono accesi nelle impostazioni.
         DockBar.shared.start()
         // La barra di ricerca che esce dal Dock (Impostazioni › Ricerca): prende ⌘spazio solo se è accesa.
-        SearchBar.shared.start()
         // Il righello della giornata sul bordo (Impostazioni › Righello): solo un ascolto del puntatore finché non esce.
         DayRuler.shared.start()
         // Lo sfondo di Charland (Impostazioni › Sfondo): ridisegna se cambiano gli schermi.
@@ -72,7 +71,6 @@ final class AppServices {
         pointer.stop()
         AppQuitter.shared.stop()
         DockBar.shared.stop()
-        SearchBar.shared.stop()
         DayRuler.shared.stop()
         KeepAwake.shared.shutdown()
         BatteryMonitor.shared.stop()

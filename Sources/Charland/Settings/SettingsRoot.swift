@@ -3,7 +3,7 @@ import CharlandCore
 
 /// Le sezioni dell'app, come in Impostazioni di Sistema.
 enum SettingsSection: String, CaseIterable, Identifiable {
-    case general, appearance, voice, shortcuts, search, sliders, dock, lockScreen, wallpaper, agents, calendar, ruler, tray, clipboard, quitApps, api, permissions, support, about
+    case general, appearance, voice, shortcuts, sliders, dock, lockScreen, wallpaper, agents, calendar, ruler, tray, clipboard, quitApps, api, permissions, support, about
     var id: String { rawValue }
 
     var title: LocalizedStringKey {
@@ -12,7 +12,6 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .appearance: "Aspetto"
         case .voice: "Voce"
         case .shortcuts: "Scorciatoie"
-        case .search: "Ricerca"
         // Una chiave sua: in inglese la barra laterale va in title case come le altre voci («Volume & Brightness»),
         // mentre «Volume e luminosità» negli interruttori resta «Volume and brightness».
         case .sliders: "sezione.volume"
@@ -38,7 +37,6 @@ enum SettingsSection: String, CaseIterable, Identifiable {
         case .appearance: "circle.lefthalf.filled"
         case .voice: "waveform"
         case .shortcuts: "command"
-        case .search: "magnifyingglass"
         case .sliders: "speaker.wave.2"
         case .dock: "dock.rectangle"
         case .lockScreen: "lock.display"
@@ -74,7 +72,6 @@ struct SettingsRoot: View {
                 case .appearance: AppearancePane()
                 case .voice: VoicePane()
                 case .shortcuts: ShortcutsPane()
-                case .search: SearchPane()
                 case .dock: DockPane()
                 case .lockScreen: LockScreenPane()
                 case .wallpaper: WallpaperPane()
