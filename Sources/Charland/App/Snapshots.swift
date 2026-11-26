@@ -177,7 +177,7 @@ enum Snapshots {
         var star = SystemActivity.message(StarAsk.activityID, template: .status, title: String(localized: "Ti piace Charland?"))
         star.subtitle = String(localized: "Una stella su GitHub aiuta altri a trovarla")
         star.symbol = "star.fill"; star.tint = "yellow"
-        star.actions = [.init(id: "stella", title: String(localized: "Stella su GitHub")), .init(id: "mai", title: String(localized: "Non chiedere più"))]
+        star.actions = StarAsk.actions
         let starActivity = ActivityCenter.activity(key: "charland/stella", message: star)
         engine.show(starActivity, content: .api(ActivityCenter.content(for: star)))
         engine.send(.expand(id: starActivity.id)); settle(); shot("11b-stella")

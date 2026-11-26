@@ -8,7 +8,8 @@
   <a href="https://github.com/carpaaaaa/charland/releases/latest"><b>Download</b></a> ·
   <a href="https://charland.charstudio.app">Website</a> ·
   <a href="https://charland.charstudio.app/changelog">Changelog</a> ·
-  <a href="CONTRIBUTING.md">Contribute</a>
+  <a href="CONTRIBUTING.md">Contribute</a> ·
+  <a href="https://buymeacoffee.com/charstudio">Buy us a coffee</a>
 </p>
 
 <p align="center"><img src="docs/screenshots/home.png" alt="The Charland island open under the notch: Dictate, Timer, Music and Settings"></p>
@@ -57,7 +58,9 @@ including how to keep macOS permissions between builds, is in [CONTRIBUTING.md](
 
 ## Contributing
 
-Bug reports, ideas and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md). Charland was first
+Bug reports, ideas and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md). If Charland is
+useful to you, a star on GitHub helps others find it, and you can [buy us a coffee](https://buymeacoffee.com/charstudio).
+Companies can [sponsor Charland](https://charland.charstudio.app/sponsors). Charland was first
 written in Italian, so many code comments are in Italian; new code, issues and pull requests in English are preferred.
 
 ## Privacy

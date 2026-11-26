@@ -4652,7 +4652,7 @@
         }
       }
     },
-    "Non chiedere più" : {
+    "Non chiedere" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -6532,16 +6532,6 @@
         }
       }
     },
-    "Stella su GitHub" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Star on GitHub"
-          }
-        }
-      }
-    },
     "Stile" : {
       "localizations" : {
         "en" : {
@@ -7223,6 +7213,16 @@
         }
       }
     },
+    "Un caffè" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buy us a coffee"
+          }
+        }
+      }
+    },
     "Un clic sul vassoio comincia a dettare a mani libere nel campo dove stai scrivendo, un altro clic scrive. Nel cassetto le parole di oggi, il tempo risparmiato e le ultime dettature: un clic le copia." : {
       "localizations" : {
         "en" : {
@@ -7319,6 +7319,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Another app already uses this shortcut: choose a different one."
+          }
+        }
+      }
+    },
+    "Una stella" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star on GitHub"
           }
         }
       }
