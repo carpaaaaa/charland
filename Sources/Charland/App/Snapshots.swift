@@ -173,6 +173,16 @@ enum Snapshots {
         engine.send(.expand(id: "agente")); settle(); shot("11-agente")
         engine.send(.collapse); engine.end(id: "agente"); settle()
 
+        // La stella su GitHub chiesta dopo un aggiornamento (StarAsk), come la mostra il centro delle attività.
+        var star = SystemActivity.message(StarAsk.activityID, template: .status, title: String(localized: "Ti piace Charland?"))
+        star.subtitle = String(localized: "Una stella su GitHub aiuta altri a trovarla")
+        star.symbol = "star.fill"; star.tint = "yellow"
+        star.actions = [.init(id: "stella", title: String(localized: "Stella su GitHub")), .init(id: "mai", title: String(localized: "Non chiedere più"))]
+        let starActivity = ActivityCenter.activity(key: "charland/stella", message: star)
+        engine.show(starActivity, content: .api(ActivityCenter.content(for: star)))
+        engine.send(.expand(id: starActivity.id)); settle(); shot("11b-stella")
+        engine.send(.collapse); engine.end(id: starActivity.id); settle()
+
         // Riproduzione vuota (tessera Musica con niente in riproduzione): la nota in alto a sinistra.
         let idle = MusicInfo(title: "", artist: "", elapsed: 0, duration: 0, isPlaying: false, appName: MusicApp.shared.name, idle: true)
         engine.show(music, content: .music(idle)); engine.send(.expand(id: "musica")); settle(); shot("12-musica-vuota")

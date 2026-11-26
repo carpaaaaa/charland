@@ -4652,6 +4652,16 @@
         }
       }
     },
+    "Non chiedere più" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't ask again"
+          }
+        }
+      }
+    },
     "Non chiudere mai" : {
       "localizations" : {
         "en" : {
@@ -6522,6 +6532,16 @@
         }
       }
     },
+    "Stella su GitHub" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Star on GitHub"
+          }
+        }
+      }
+    },
     "Stile" : {
       "localizations" : {
         "en" : {
@@ -6798,6 +6818,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Waiting for you"
+          }
+        }
+      }
+    },
+    "Ti piace Charland?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enjoying Charland?"
           }
         }
       }
@@ -7289,6 +7319,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Another app already uses this shortcut: choose a different one."
+          }
+        }
+      }
+    },
+    "Una stella su GitHub aiuta altri a trovarla" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A star on GitHub helps others find it"
           }
         }
       }

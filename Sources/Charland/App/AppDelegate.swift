@@ -151,6 +151,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             LegacyCleanup.run()
             Updates.shared.start()
             AppServices.shared.start(showWindow: showWindow)
+            StarAsk.checkAfterLaunch(firstRun: firstRun)
         }
     }
 
