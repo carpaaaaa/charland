@@ -9,8 +9,8 @@ CHARLAND_BUNDLE_ID = com.charstudio.charland
 CHARLAND_CLI = charland
 CHARLAND_URL_SCHEME = charland
 CHARLAND_TEAM = 2RLZS256X6
-CHARLAND_VERSION = 1.6.1
-CHARLAND_BUILD = 16
+CHARLAND_VERSION = 1.6.2
+CHARLAND_BUILD = 17
 CHARLAND_SITE = charstudio.app
 
 // Sparkle: la chiave pubblica Ed25519 che verifica gli aggiornamenti delle build ufficiali. La privata non sta nel repo.

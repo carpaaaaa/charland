@@ -6,7 +6,7 @@ public enum Identity {
     public static let bundleID = "com.charstudio.charland"
     public static let cli = "charland"
     public static let urlScheme = "charland"
-    public static let version = "1.6.1"
+    public static let version = "1.6.2"
     public static let site = "charstudio.app"
     /// Servizio XPC del motore vocale.
     public static let voiceServiceID = "com.charstudio.charland.voce"

@@ -4652,16 +4652,6 @@
         }
       }
     },
-    "Non chiedere" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don't ask again"
-          }
-        }
-      }
-    },
     "Non chiudere mai" : {
       "localizations" : {
         "en" : {
@@ -4678,6 +4668,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not connected"
+          }
+        }
+      }
+    },
+    "Non ora" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
           }
         }
       }
