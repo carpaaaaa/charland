@@ -25,20 +25,28 @@ jobs:
   app:
     name: App build
     runs-on: macos-26
-    # The app needs Xcode 27 (the hosted runners have 26.6 at the moment), so this job is expected to fail until they catch up. It does not block pull requests.
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Newest Xcode
+        id: xcode
         run: |
           latest=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$latest"
           xcodebuild -version
+          major=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          if [ "$major" -ge 27 ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "::notice::The app needs Xcode 27; this runner has Xcode $major, so the app build is skipped."; fi
       - name: Tools
+        if: steps.xcode.outputs.ok == 'true'
         run: brew install xcodegen
       - name: Config
+        if: steps.xcode.outputs.ok == 'true'
         run: cp Config/Local.xcconfig.example Config/Local.xcconfig
       - name: Dependencies
+        if: steps.xcode.outputs.ok == 'true'
         run: Scripts/scarica-dipendenze.sh
       - name: Build
-        run: Scripts/build.sh
+        if: steps.xcode.outputs.ok == 'true'
+        run: Scripts/build.sh release
+      - name: Self test
+        if: steps.xcode.outputs.ok == 'true'
+        run: ~/Library/Caches/charland-build/Build/Products/Release/Charland.app/Contents/MacOS/Charland --selftest
