@@ -37,7 +37,7 @@ final class LockSettings {
     var slots: [LockSignKind] { didSet { UserDefaults.standard.set(slots.map(\.rawValue), forKey: "lockSigns") } }
     /// Il lettore al centro quando c'è musica.
     var player: Bool { didSet { UserDefaults.standard.set(player, forKey: "lockPlayer") } }
-    /// Il testo delle canzoni: per cercarlo si mandano titolo, artista e durata a lrclib.net.
+    /// Il testo delle canzoni: per cercarlo si mandano titolo, artista e durata a lrclib.net e, se lì mancano i tempi delle parole, a lrc.red.
     var lyrics: Bool { didSet { UserDefaults.standard.set(lyrics, forKey: "lockLyrics") } }
     /// I titoli degli impegni sul blocco. Spenti di serie: sul blocco li legge chiunque passi.
     var showsTitles: Bool { didSet { UserDefaults.standard.set(showsTitles, forKey: "lockShowsTitles") } }

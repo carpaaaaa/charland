@@ -22,7 +22,7 @@ Dictation audio is processed on the device. Network use, in full:
 - speech model download at first use (Hugging Face, GitHub releases of k2-fsa);
 - weather: MET Norway (api.met.no) gets a location rounded to about a kilometre; Apple's MapKit gets the exact
   location for reverse geocoding and whatever you type in the city search;
-- synced lyrics from lrclib.net and album artwork lookups on itunes.apple.com for the "Now Playing" features;
+- synced lyrics from lrclib.net (and lrc.red when lrclib.net has no word timings) and album artwork lookups on itunes.apple.com for the "Now Playing" features;
 - update checks in official builds only (charland.charstudio.app);
 - the Charcal agenda and the "Report a bug" / "Suggest a feature" forms, which talk to Char Studio's server
   (charcal.charstudio.app; a form sends what you type, the app version, build and language, plus macOS version and Mac

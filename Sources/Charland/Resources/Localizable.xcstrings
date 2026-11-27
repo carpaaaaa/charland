@@ -1182,12 +1182,12 @@
         }
       }
     },
-    "Bloccando il Mac mentre la musica suona lo schermo resta acceso, finché suona; in pausa e senza musica si spegne come sempre. Premi la foto del lettore per aprire la copertina: foto grande e testo che si illumina parola per parola. Per cercare il testo Charland manda titolo, artista e durata del brano a lrclib.net, solo per le app di musica; in Constellation e Dynamic, quando cambia brano a schermo bloccato, manda titolo, artista e la regione del Mac anche ad Apple (itunes.apple.com) per avere la copertina grande. Al primo tasto la copertina si richiude e torna il campo della password." : {
+    "Bloccando il Mac mentre la musica suona lo schermo resta acceso, finché suona; in pausa e senza musica si spegne come sempre. Premi la foto del lettore per aprire la copertina: foto grande e testo che si illumina parola per parola. Per cercare il testo Charland manda titolo, artista e durata del brano a lrclib.net e, se lì mancano i tempi delle parole, a lrc.red, solo per le app di musica; in Constellation e Dynamic, quando cambia brano a schermo bloccato, manda titolo, artista e la regione del Mac anche ad Apple (itunes.apple.com) per avere la copertina grande. Al primo tasto la copertina si richiude e torna il campo della password." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Locking the Mac while music is playing keeps the screen on for as long as it plays; paused or without music it turns off as usual. Press the artwork in the player to open the cover: large artwork and lyrics that light up word by word. To find lyrics, Charland sends the track's title, artist and length to lrclib.net, for music apps only; in Constellation and Dynamic, when the track changes while the screen is locked, it also sends the title, artist and the Mac's region to Apple (itunes.apple.com) to get the large artwork. At the first key press the cover closes and the password field comes back."
+            "value" : "Locking the Mac while music is playing keeps the screen on for as long as it plays; paused or without music it turns off as usual. Press the artwork in the player to open the cover: large artwork and lyrics that light up word by word. To find lyrics, Charland sends the track's title, artist and length to lrclib.net and, when the word timings are missing there, to lrc.red, for music apps only; in Constellation and Dynamic, when the track changes while the screen is locked, it also sends the title, artist and the Mac's region to Apple (itunes.apple.com) to get the large artwork. At the first key press the cover closes and the password field comes back."
           }
         }
       }
@@ -7809,6 +7809,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "synchronized song lyrics"
+          }
+        }
+      }
+    },
+    "i testi a tempo delle canzoni, parola per parola" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "word-by-word synchronized song lyrics"
           }
         }
       }

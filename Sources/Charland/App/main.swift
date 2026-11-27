@@ -194,6 +194,13 @@ if let session = option("--dove-agente") {
 }
 
 #if DEBUG
+if let title = option("--testo") {
+    // Per le prove: da dove arriva il testo di un brano (`LyricsService.describe`), senza finestre né memoria.
+    let artist = option("--artista") ?? "", duration = Double(option("--durata") ?? "") ?? 0
+    Task { print(await LyricsService.describe(title: title, artist: artist, album: option("--album") ?? "", duration: duration)); exit(0) }
+    RunLoop.main.run()
+}
+
 if arguments.contains("--prova-agenda") {
     exit(MainActor.assumeIsolated { AgendaStore.shared.checkUpcoming() } ? 0 : 1)
 }

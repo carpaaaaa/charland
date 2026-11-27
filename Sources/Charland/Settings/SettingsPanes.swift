@@ -1037,7 +1037,11 @@ struct AboutPane: View {
                 Link("Source code on GitHub", destination: URL(string: "https://github.com/carpaaaaa/charland")!)
                 ForEach(Credits.all, id: \.name) { credit in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(credit.name).font(.system(size: 14, weight: .medium))
+                        if let link = credit.link {
+                            Link(credit.name, destination: link).font(.system(size: 14, weight: .medium))
+                        } else {
+                            Text(credit.name).font(.system(size: 14, weight: .medium))
+                        }
                         Text(credit.detail).font(.system(size: 12)).foregroundStyle(.secondary)
                     }
                 }
@@ -1056,6 +1060,8 @@ enum Credits {
     struct Credit {
         let name: String
         let detail: String
+        /// Il sito, per chi chiede di essere citato con un link (lrc.red lo chiede dove si mostrano i suoi testi).
+        var link: URL? = nil
     }
 
     static let all: [Credit] = [
@@ -1069,7 +1075,8 @@ enum Credits {
         Credit(name: "OpenWhispr", detail: "MIT License · " + String(localized: "il riferimento per la dettatura e per il confronto dei motori")),
         Credit(name: "Sparkle", detail: "MIT License · " + String(localized: "gli aggiornamenti dell'app")),
         Credit(name: "MET Norway", detail: "CC BY 4.0 · " + String(localized: "le previsioni del tempo, dall'istituto meteorologico norvegese")),
-        Credit(name: "LRCLIB", detail: "lrclib.net · " + String(localized: "i testi a tempo delle canzoni")),
+        Credit(name: "LRCLIB", detail: "lrclib.net · " + String(localized: "i testi a tempo delle canzoni"), link: URL(string: "https://lrclib.net")),
+        Credit(name: "lrc.red", detail: "lrc.red · " + String(localized: "i testi a tempo delle canzoni, parola per parola"), link: URL(string: "https://lrc.red")),
     ]
 
     /// I testi interi delle licenze (Apache 2.0 chiede di distribuirli con l'app), in `Terze parti.txt`.

@@ -50,7 +50,7 @@ struct LockScreenPane: View {
             } header: {
                 Text("Musica")
             } footer: {
-                Text("Bloccando il Mac mentre la musica suona lo schermo resta acceso, finché suona; in pausa e senza musica si spegne come sempre. Premi la foto del lettore per aprire la copertina: foto grande e testo che si illumina parola per parola. Per cercare il testo Charland manda titolo, artista e durata del brano a lrclib.net, solo per le app di musica; in Constellation e Dynamic, quando cambia brano a schermo bloccato, manda titolo, artista e la regione del Mac anche ad Apple (itunes.apple.com) per avere la copertina grande. Al primo tasto la copertina si richiude e torna il campo della password.")
+                Text("Bloccando il Mac mentre la musica suona lo schermo resta acceso, finché suona; in pausa e senza musica si spegne come sempre. Premi la foto del lettore per aprire la copertina: foto grande e testo che si illumina parola per parola. Per cercare il testo Charland manda titolo, artista e durata del brano a lrclib.net e, se lì mancano i tempi delle parole, a lrc.red, solo per le app di musica; in Constellation e Dynamic, quando cambia brano a schermo bloccato, manda titolo, artista e la regione del Mac anche ad Apple (itunes.apple.com) per avere la copertina grande. Al primo tasto la copertina si richiude e torna il campo della password.")
             }
 
             Section {

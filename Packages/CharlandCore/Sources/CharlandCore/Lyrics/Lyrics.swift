@@ -47,6 +47,8 @@ public struct Lyrics: Sendable, Equatable {
     /// Dove comincia ogni strofa (indici in `lines`), quando la fonte lo dice: LRCLIB lo dice nel testo senza tempi,
     /// con le righe vuote. Vuoto se non si sa: allora le strofe si deducono dai silenzi.
     public var stanzaStarts: [Int] = []
+    /// Da chi viene il testo, quando la fonte chiede di essere citata dove si mostra («lrc.red»). `nil` per LRCLIB.
+    public var credit: String?
 
     public init(lines: [TimedLine], wordTimingIsReal: Bool) {
         self.lines = lines; self.wordTimingIsReal = wordTimingIsReal
@@ -340,33 +342,56 @@ public struct LRCLIBRecord: Decodable, Sendable, Equatable {
 /// punto della versione riga per riga andavano peggio (0,15 s, 9 meglio e 6 peggio): si usano così come sono.
 public enum LyricsFile {
     /// Il testo in LRC con le parole a tempo (`[mm:ss.xx] <mm:ss.xx>parola <mm:ss.xx>parola`), più una riga vuota alla fine
-    /// detta di ogni frase quando dopo c'è silenzio. `nil` se non ci sono parole a tempo.
-    public static func lrc(_ file: String) -> String? {
-        struct Line { var start: Double?; var end: Double?; var text = ""; var words: [(String, Double?)] = [] }
+    /// detta di ogni frase quando dopo c'è silenzio. `nil` se non ci sono parole a tempo (con `wordsRequired` falso, se non
+    /// ci sono righe a tempo: allora le parole le stima Charland, come per un LRC riga per riga).
+    ///
+    /// Il rientro si legge da com'è: LRCLIB mette le righe a capo (`- text:`) e le parole allo stesso rientro di `words:`,
+    /// lrc.red tutto due spazi più a destra e le parole due spazi più in là di `words:`.
+    /// Un pezzo senza spazio in coda che non chiude la riga è una sillaba: continua nella parola dopo (lrc.red divide
+    /// spesso le parole lunghe in sillabe, «mon» + «ster!»), e la parola parte dalla sua prima sillaba.
+    public static func lrc(_ file: String, wordsRequired: Bool = true) -> String? {
+        struct Line { var start: Double?; var end: Double?; var text = ""; var parts: [(text: String, start: Double?)] = [] }
         var lines: [Line] = []
-        var inWords = false
+        var started = false, lineIndent: Int?, wordIndent: Int?, inWord = false
         for raw in file.split(separator: "\n", omittingEmptySubsequences: false) {
             let row = String(raw)
-            if !row.hasPrefix(" "), !row.hasPrefix("-"), row.contains(":"), !lines.isEmpty, !row.hasPrefix("lines:") { break }
-            if row.hasPrefix("- text:") { lines.append(Line(text: value(row, "- text:"))); inWords = false; continue }
-            guard !lines.isEmpty else { continue }
-            if row.hasPrefix("  words:") { inWords = true; continue }
-            if row.hasPrefix("  - text:") { lines[lines.count - 1].words.append((value(row, "  - text:"), nil)); continue }
-            if row.hasPrefix("    start_ms:"), inWords, !lines[lines.count - 1].words.isEmpty {
-                lines[lines.count - 1].words[lines[lines.count - 1].words.count - 1].1 = millis(row, "    start_ms:"); continue
+            if !started { started = row.hasPrefix("lines:"); continue }
+            let body = row.drop { $0 == " " }
+            guard !body.isEmpty else { continue }
+            let indent = row.count - body.count
+            // fuori dall'elenco delle righe (`plain:` in LRCLIB)
+            if indent == 0, !body.hasPrefix("-") { break }
+            if body.hasPrefix("- text:") {
+                if lineIndent == nil { lineIndent = indent }
+                if indent == lineIndent {
+                    lines.append(Line(text: value(String(body), "- text:"))); wordIndent = nil; inWord = false
+                } else if !lines.isEmpty {
+                    lines[lines.count - 1].parts.append((value(String(body), "- text:"), nil)); wordIndent = indent; inWord = true
+                }
+                continue
             }
-            if row.hasPrefix("  start_ms:"), !inWords { lines[lines.count - 1].start = millis(row, "  start_ms:"); continue }
-            if row.hasPrefix("  end_ms:"), !inWords { lines[lines.count - 1].end = millis(row, "  end_ms:"); continue }
+            guard !lines.isEmpty, let lineIndent, indent > lineIndent else { continue }
+            let isStart = body.hasPrefix("start_ms:"), isEnd = body.hasPrefix("end_ms:")
+            guard isStart || isEnd else { continue }
+            let ms = millis(String(body), isStart ? "start_ms:" : "end_ms:")
+            if inWord, let wordIndent, indent > wordIndent {
+                if isStart { lines[lines.count - 1].parts[lines[lines.count - 1].parts.count - 1].start = ms }
+            } else if isStart { lines[lines.count - 1].start = ms } else { lines[lines.count - 1].end = ms }
         }
         var out: [String] = [], timed = 0
         for (i, line) in lines.enumerated() {
             guard let start = line.start else { continue }
+            // le sillabe tornano parole
+            var words: [(text: String, start: Double?)] = [], glue = false
+            for (k, part) in line.parts.enumerated() {
+                let clean = part.text.filter { !"<>[]".contains($0) }.trimmingCharacters(in: .whitespaces)
+                if glue, !words.isEmpty { words[words.count - 1].text += clean } else if !clean.isEmpty { words.append((clean, part.start)) }
+                glue = !clean.isEmpty && !(part.text.last?.isWhitespace ?? true) && k + 1 < line.parts.count
+            }
             var body = ""
-            for (text, at) in line.words {
-                let clean = text.filter { !"<>[]".contains($0) }.trimmingCharacters(in: .whitespaces)
-                guard !clean.isEmpty else { continue }
-                if let at { body += (body.isEmpty ? "" : " ") + "<\(stamp(at))>" + clean; timed += 1 }
-                else { body += (body.isEmpty ? "" : " ") + clean }
+            for (text, at) in words where !text.isEmpty {
+                if let at { body += (body.isEmpty ? "" : " ") + "<\(stamp(at))>" + text; timed += 1 }
+                else { body += (body.isEmpty ? "" : " ") + text }
             }
             if body.isEmpty { body = line.text.filter { !"<>[]".contains($0) } }
             guard !body.trimmingCharacters(in: .whitespaces).isEmpty else { continue }
@@ -375,7 +400,8 @@ public enum LyricsFile {
             let next = lines[(i + 1)...].first { $0.start != nil }?.start ?? .infinity
             if let end = line.end, end > start, next - end > 0.3 { out.append("[\(stamp(end))]") }
         }
-        return timed >= 3 ? out.joined(separator: "\n") : nil
+        if wordsRequired { return timed >= 3 ? out.joined(separator: "\n") : nil }
+        return out.count >= 3 ? out.joined(separator: "\n") : nil
     }
 
     private static func value(_ row: String, _ key: String) -> String {
@@ -462,10 +488,11 @@ public enum LRCLIB {
         return candidates.min { abs(($0.duration ?? .infinity) - duration) < abs(($1.duration ?? .infinity) - duration) }
     }
 
-    public static func result(from record: LRCLIBRecord?, trackDuration: Double?) -> LyricsResult {
+    public static func result(from record: LRCLIBRecord?, trackDuration: Double?, credit: String? = nil) -> LyricsResult {
         guard let record, record.instrumental != true, let synced = record.syncedLyrics, !synced.isEmpty else { return .none }
         var lyrics = LRC.parse(synced, trackDuration: trackDuration ?? record.duration)
         lyrics.stanzaStarts = stanzaStarts(plain: record.plainLyrics, lineCount: lyrics.lines.count)
+        lyrics.credit = credit
         return lyrics.isEmpty ? .none : .synced(lyrics)
     }
 
@@ -502,6 +529,79 @@ public enum LRCLIB {
     /// La chiave del brano per la memoria dei testi già cercati.
     public static func cacheKey(title: String, artist: String, duration: Double?) -> String {
         "\(key(artist))|\(key(title))|\(Int((duration ?? 0).rounded()))"
+    }
+}
+
+// MARK: - lrc.red
+
+/// lrc.red: un catalogo aperto di testi a tempo, cercato per brano (ISRC), quasi sempre parola per parola. È la fonte
+/// prima di Better Lyrics e di molte app di musica, che mettono in cima i testi a tempo di parola, poi quelli di riga,
+/// e LRCLIB per ultimo.
+///
+/// Charland lo chiede solo quando LRCLIB non ha i tempi delle parole: provato il 27 novembre 2026 sulle anteprime di 22
+/// brani di carpa, dove LRCLIB ha i tempi veri delle parole quelli restano un filo più precisi (0,084 contro 0,096 s di
+/// errore mediano), mentre dove Charland doveva stimarle lrc.red ne migliora 5 su 6 (da 0,25 a 0,06 s, da 0,17 a 0,07 s).
+/// Il sesto era un'altra edizione del brano, più corta di 3 s: per questo la durata deve stare entro 2 s.
+///
+/// L'API è gratis per tutti a due condizioni: un User-Agent con nome dell'app, sito e indirizzo da contattare, e il
+/// nome di lrc.red con un link dove si mostrano i suoi testi (`Lyrics.credit`).
+public enum LRCRed {
+    public static let host = "https://lrc.red"
+    /// Entro quanto deve stare la durata: oltre è un'altra edizione (un'intro diversa), coi tempi spostati.
+    public static let tolerance = 2.0
+
+    public struct Hit: Decodable, Sendable, Equatable {
+        public var isrc: String
+        public var title: String
+        public var artist: String
+        public var duration: Double?
+
+        public init(isrc: String, title: String, artist: String, duration: Double?) {
+            self.isrc = isrc; self.title = title; self.artist = artist; self.duration = duration
+        }
+    }
+
+    struct Search: Decodable { var hits: [Hit] }
+
+    /// La ricerca: titolo senza code e primo artista, come li scriverebbe una persona.
+    public static func searchURL(title: String, artist: String) -> URL? {
+        var c = URLComponents(string: host + "/search.json")
+        c?.queryItems = [URLQueryItem(name: "q", value: "\(LRCLIB.clean(title)) \(LRCLIB.firstArtist(artist))")]
+        return c?.url
+    }
+
+    public static func hits(_ data: Data) -> [Hit]? { (try? JSONDecoder().decode(Search.self, from: data))?.hits }
+
+    /// Il file coi tempi di righe, parole e sillabe (lo stesso formato del campo `lyricsfile` di LRCLIB).
+    public static func lyricsfileURL(isrc: String) -> URL? {
+        guard isrc.count == 12, isrc.allSatisfy({ $0.isLetter || $0.isNumber }) else { return nil }
+        return URL(string: host + "/s/\(isrc).lyricsfile.yaml")
+    }
+
+    /// Il brano giusto fra i risultati: stesso titolo (senza code come «(feat. …)»), stesso artista (o uno contiene il
+    /// primo nome dell'altro), durata entro `tolerance`, la più vicina.
+    public static func best(_ hits: [Hit], title: String, artist: String, duration: Double?) -> Hit? {
+        let wantTitle = LRCLIB.key(title), wantArtist = LRCLIB.key(artist), wantFirst = LRCLIB.key(LRCLIB.firstArtist(artist))
+        guard !wantTitle.isEmpty, !wantFirst.isEmpty else { return nil }
+        let ok = hits.filter { h in
+            guard LRCLIB.key(h.title) == wantTitle else { return false }
+            let a = LRCLIB.key(h.artist), first = LRCLIB.key(LRCLIB.firstArtist(h.artist))
+            guard !a.isEmpty, a.contains(wantFirst) || wantArtist.contains(first) else { return false }
+            guard let duration, duration > 0 else { return true }
+            return h.duration.map { abs($0 - duration) <= tolerance } ?? false
+        }
+        guard let duration, duration > 0 else { return ok.first }
+        return ok.min { abs(($0.duration ?? .infinity) - duration) < abs(($1.duration ?? .infinity) - duration) }
+    }
+
+    /// Il testo di lrc.red come una voce di LRCLIB, così il resto di Charland non cambia. `words` vero se ha i tempi
+    /// delle parole; `nil` se il file non ha nemmeno le righe a tempo.
+    public static func record(file: String, hit: Hit) -> (record: LRCLIBRecord, words: Bool)? {
+        if let lrc = LyricsFile.lrc(file) {
+            return (LRCLIBRecord(trackName: hit.title, artistName: hit.artist, duration: hit.duration, syncedLyrics: lrc), true)
+        }
+        guard let lrc = LyricsFile.lrc(file, wordsRequired: false) else { return nil }
+        return (LRCLIBRecord(trackName: hit.title, artistName: hit.artist, duration: hit.duration, syncedLyrics: lrc), false)
     }
 }
 

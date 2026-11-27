@@ -38,6 +38,7 @@ Weather data: MET Norway (Norwegian Meteorological Institute), CC BY 4.0 and NLO
   https://api.met.no
 
 Synchronized lyrics: LRCLIB, https://lrclib.net
+Word-by-word synchronized lyrics: lrc.red, https://lrc.red
 
 OpenWhispr, MIT License. Charland does not contain OpenWhispr code; it follows ideas from its native
 macOS helpers and the structure of its language list (src/config/languageRegistry.json).

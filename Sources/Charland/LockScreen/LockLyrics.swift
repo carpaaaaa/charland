@@ -1,7 +1,8 @@
 import SwiftUI
 import CharlandCore
 
-/// Cerca il testo a tempo del brano che suona su LRCLIB (lrclib.net) e lo ricorda.
+/// Cerca il testo a tempo del brano che suona su LRCLIB (lrclib.net) e, quando LRCLIB non ha i tempi delle parole, su
+/// lrc.red (`LRCRed`), e lo ricorda.
 ///
 /// Si cerca solo per le app di musica (non per il video di un sito) e solo se l'utente ha acceso «Testo delle canzoni»:
 /// alla rete vanno titolo, artista, album e durata, nient'altro. Quando il testo non c'è, o non ha i tempi,
@@ -29,19 +30,20 @@ final class LyricsService {
         if let known = memory[key] { done(known); return }
         let saved = Self.load(key)
         if let saved, saved.checked {
-            let result = LRCLIB.result(from: saved.record, trackDuration: snapshot.duration)
+            let result = LRCLIB.result(from: saved.record, trackDuration: snapshot.duration, credit: saved.credit)
             memory[key] = result; done(result); return
         }
-        // un testo scelto prima del controllo delle versioni si chiede di nuovo, una volta: poteva essere la versione
-        // rotta (con «Start A Riot» lo era); se la rete non risponde si tiene quello
+        // un testo scelto prima del controllo delle versioni, o senza i tempi delle parole prima di lrc.red, si chiede di
+        // nuovo, una volta: poteva essere la versione rotta (con «Start A Riot» lo era); se la rete non risponde si tiene quello
         let (title, artist, album, duration) = (snapshot.title, snapshot.artist, snapshot.album, snapshot.duration)
         task = Task {
             let fetched = await Self.fetch(title: title, artist: artist, album: album, duration: duration)
             guard !Task.isCancelled else { return }
             let record = fetched?.record ?? saved?.record
-            let result = LRCLIB.result(from: record, trackDuration: duration)
+            let credit = fetched == nil ? saved?.credit : fetched?.credit
+            let result = LRCLIB.result(from: record, trackDuration: duration, credit: credit)
             // una risposta mancata per colpa della rete non si ricorda: al prossimo ascolto si riprova
-            if let fetched { Self.save(fetched.record, key: key, checked: fetched.checked) }
+            if let fetched { Self.save(fetched.record, key: key, checked: fetched.checked, credit: fetched.credit) }
             if record != nil { self.memory[key] = result }
             if self.wanted == key { done(result) }
         }
@@ -49,23 +51,82 @@ final class LyricsService {
 
     // MARK: Rete
 
+    /// Nome, sito e indirizzo: lrc.red li chiede a chi usa la sua API (e LRCLIB chiede almeno nome e sito).
     private nonisolated static let agent: String = {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
-        return "Charland/\(version) (https://charstudio.app)"
+        return "Charland/\(version) (https://charland.charstudio.app; support@charstudio.app)"
     }()
+
+    private nonisolated static func get(_ url: URL?) async -> (Data, Int)? {
+        guard let url else { return nil }
+        var request = URLRequest(url: url, timeoutInterval: 8)
+        request.setValue(agent, forHTTPHeaderField: "User-Agent")
+        guard let (data, response) = try? await URLSession.shared.data(for: request), let http = response as? HTTPURLResponse else { return nil }
+        return (data, http.statusCode)
+    }
+
+    private struct Fetched { var record: LRCLIBRecord; var checked: Bool; var credit: String? }
+
+    /// Prima LRCLIB; se non ha i tempi delle parole, lrc.red, che quasi sempre li ha (misure in `LRCRed`). Il testo
+    /// riga per riga di lrc.red si usa solo quando LRCLIB non ha niente. `nil` quando la rete non risponde a nessuno.
+    /// `checked` falso fa chiedere di nuovo al prossimo ascolto: quando una delle due non ha risposto, o la ricerca
+    /// larga di LRCLIB non è passata.
+    private nonisolated static func fetch(title: String, artist: String, album: String, duration: Double) async -> Fetched? {
+        let lrclib = await fetchLRCLIB(title: title, artist: artist, album: album, duration: duration)
+        if let lrclib, lrclib.record.instrumental == true || hasWordTimes(lrclib.record) {
+            return Fetched(record: lrclib.record, checked: lrclib.checked, credit: nil)
+        }
+        let red = await fetchLRCRed(title: title, artist: artist, duration: duration)
+        let lrclibHasLines = lrclib?.record.syncedLyrics?.isEmpty == false
+        switch red {
+        case .found(let record, let words) where words || (lrclib != nil && !lrclibHasLines):
+            return Fetched(record: record, checked: lrclib?.checked ?? false, credit: "lrc.red")
+        case .found, .missing:
+            return lrclib.map { Fetched(record: $0.record, checked: $0.checked, credit: nil) }
+        case nil:
+            return lrclib.map { Fetched(record: $0.record, checked: false, credit: nil) }
+        }
+    }
+
+    #if DEBUG
+    /// Per le prove (`Charland --testo "titolo" --artista "…" --durata 200`): la stessa strada di `fetch`, senza memoria
+    /// né impostazioni. Dice da dove viene il testo, quante righe ha e se i tempi delle parole sono veri.
+    nonisolated static func describe(title: String, artist: String, album: String, duration: Double) async -> String {
+        guard let fetched = await fetch(title: title, artist: artist, album: album, duration: duration) else { return "rete: nessuna risposta" }
+        let source = fetched.credit ?? "LRCLIB"
+        guard case .synced(let lyrics) = LRCLIB.result(from: fetched.record, trackDuration: duration, credit: fetched.credit) else {
+            return "\(source): nessun testo a tempo"
+        }
+        let words = lyrics.lines.reduce(0) { $0 + $1.words.count }
+        return "\(source) · \(lyrics.lines.count) righe, \(words) parole · tempi delle parole \(lyrics.wordTimingIsReal ? "veri" : "stimati")"
+            + " · prima riga a \(String(format: "%.2f", lyrics.lines.first?.start ?? 0)) s · controllato \(fetched.checked ? "sì" : "no")"
+    }
+    #endif
+
+    private nonisolated static func hasWordTimes(_ record: LRCLIBRecord) -> Bool {
+        guard let synced = record.syncedLyrics, synced.contains("<") else { return false }
+        return LRC.parse(synced).wordTimingIsReal
+    }
+
+    private enum RedAnswer { case found(LRCLIBRecord, words: Bool), missing }
+
+    /// Il brano su lrc.red: ricerca per titolo e artista, poi il file coi tempi. `nil` quando la rete non risponde
+    /// (o lrc.red chiede di rallentare): si riprova al prossimo ascolto.
+    private nonisolated static func fetchLRCRed(title: String, artist: String, duration: Double) async -> RedAnswer? {
+        guard let (data, status) = await get(LRCRed.searchURL(title: title, artist: artist)) else { return nil }
+        guard status == 200, let hits = LRCRed.hits(data) else { return status == 404 ? .missing : nil }
+        guard let hit = LRCRed.best(hits, title: title, artist: artist, duration: duration) else { return .missing }
+        guard let (file, fileStatus) = await get(LRCRed.lyricsfileURL(isrc: hit.isrc)) else { return nil }
+        guard fileStatus == 200 || fileStatus == 404 else { return nil }
+        guard fileStatus == 200, let text = String(data: file, encoding: .utf8), let found = LRCRed.record(file: text, hit: hit) else { return .missing }
+        return .found(found.record, words: found.words)
+    }
 
     /// Prima la domanda precisa, poi sempre la ricerca larga: le altre versioni dello stesso brano servono a riconoscere
     /// una versione rotta (`LRCVersions.pick`) e, se la domanda precisa non trova, a trovarne una (la durata più vicina).
     /// Torna un risultato vuoto (senza testi) quando LRCLIB dice che non c'è, `nil` quando la rete non risponde.
     /// `checked` dice se la versione è passata dal controllo (falso se la ricerca larga non ha risposto).
-    private nonisolated static func fetch(title: String, artist: String, album: String, duration: Double) async -> (record: LRCLIBRecord, checked: Bool)? {
-        func get(_ url: URL?) async -> (Data, Int)? {
-            guard let url else { return nil }
-            var request = URLRequest(url: url, timeoutInterval: 8)
-            request.setValue(agent, forHTTPHeaderField: "User-Agent")
-            guard let (data, response) = try? await URLSession.shared.data(for: request), let http = response as? HTTPURLResponse else { return nil }
-            return (data, http.statusCode)
-        }
+    private nonisolated static func fetchLRCLIB(title: String, artist: String, album: String, duration: Double) async -> (record: LRCLIBRecord, checked: Bool)? {
         guard let (data, status) = await get(LRCLIB.getURL(title: title, artist: artist, album: album, duration: duration)) else { return nil }
         guard status == 200 || status == 404 else { return nil }
         var exact: LRCLIBRecord?
@@ -102,23 +163,27 @@ final class LyricsService {
     }
     /// `rule` è la regola con cui è stata scelta la versione: senza (i testi salvati prima del 19 novembre 2026) o più
     /// vecchia di `currentRule`, il testo si chiede di nuovo una volta.
-    private struct Saved: Codable { var at: Date; var synced: String?; var instrumental: Bool?; var duration: Double?; var plain: String?; var rule: Int? }
+    /// `credit`: la fonte da citare, «lrc.red» quando il testo viene da lì.
+    private struct Saved: Codable { var at: Date; var synced: String?; var instrumental: Bool?; var duration: Double?; var plain: String?; var rule: Int?; var credit: String? }
     /// 2: controllo delle versioni (`LRCVersions.pick`). 3: tempi veri delle parole (`LyricsFile`), 19 novembre 2026 sera.
-    private nonisolated static let currentRule = 3
+    /// 4: lrc.red quando LRCLIB non ha i tempi delle parole, 27 novembre 2026.
+    private nonisolated static let currentRule = 4
 
-    private static func load(_ key: String) -> (record: LRCLIBRecord, checked: Bool)? {
+    private static func load(_ key: String) -> (record: LRCLIBRecord, checked: Bool, credit: String?)? {
         guard let data = try? Data(contentsOf: file(key)), let saved = try? JSONDecoder().decode(Saved.self, from: data) else { return nil }
         // un «non c'è» vale una settimana: i testi si aggiungono col tempo
         if (saved.synced ?? "").isEmpty, Date().timeIntervalSince(saved.at) > 7 * 86400 { return nil }
         let record = LRCLIBRecord(duration: saved.duration, instrumental: saved.instrumental, plainLyrics: saved.plain, syncedLyrics: saved.synced)
-        // un brano strumentale o senza testo non ha versioni da controllare
-        let checked = (saved.rule ?? 0) >= currentRule || saved.instrumental == true || (saved.synced ?? "").isEmpty
-        return (record, checked)
+        // un brano strumentale non ha versioni da controllare; uno che aveva già i tempi delle parole da LRCLIB non
+        // cambierebbe con lrc.red; gli altri (riga per riga o «non c'è») si chiedono di nuovo una volta
+        let rule = saved.rule ?? 0
+        let checked = rule >= currentRule || saved.instrumental == true || (rule == 3 && hasWordTimes(record))
+        return (record, checked, saved.credit)
     }
-    private static func save(_ record: LRCLIBRecord, key: String, checked: Bool) {
+    private static func save(_ record: LRCLIBRecord, key: String, checked: Bool, credit: String?) {
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let saved = Saved(at: Date(), synced: record.syncedLyrics, instrumental: record.instrumental, duration: record.duration, plain: record.plainLyrics,
-                          rule: checked ? currentRule : nil)
+                          rule: checked ? currentRule : nil, credit: credit)
         try? JSONEncoder().encode(saved).write(to: file(key), options: .atomic)
     }
 }
